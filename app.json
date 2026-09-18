@@ -1,25 +1,45 @@
 {
   "expo": {
-    "name": "imposter-game",
+    "name": "Imposter",
     "slug": "imposter-game",
+    "scheme": "imposter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E1712",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.ethiopian.imposter",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0E1712",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#0E1712",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0E1712"
+          }
+        }
+      ]
+    ]
   }
 }
