@@ -3,7 +3,9 @@ import { ActivityIndicator, View } from 'react-native';
 import { BUILT_IN_CATEGORIES, BUILT_IN_WORDS, type Category, type Word } from '../data/words';
 import { dealHint, type Hint, type HintMode } from '../game/hint';
 import { assignImposters, MIN_PLAYERS, pickWord, pushRecent, shuffle, speakingOrder } from '../game/logic';
+import { addPoints } from '../game/scoring';
 import { DEFAULT_STATE, loadState, readClues, saveState, toClues, type PersistedState, type Settings } from '../storage/store';
+import type { Dealt } from '../lan/engine';
 import { colors } from '../theme';
 
 export type Round = {
@@ -39,6 +41,15 @@ type GameContextValue = {
   importCustom: (text: string) => { words: number; categories: number };
   round: Round | null;
   startRound: () => string | null;
+  /** Deals a round for a LAN game with this many players, or returns an error message. */
+  dealRound: (playerCount: number) => Dealt | string;
+  /** One-phone leaderboard: total points per player name. */
+  scores: Record<string, number>;
+  addScores: (points: Record<string, number>) => void;
+  resetScores: () => void;
+  lanName: string;
+  setLanName: (name: string) => void;
+  deviceId: string;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -67,6 +78,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const categories = useMemo(() => [...BUILT_IN_CATEGORIES, ...data.customCategories], [data.customCategories]);
   const allWords = useMemo(() => [...BUILT_IN_WORDS, ...data.customWords], [data.customWords]);
+
+  /** Picks the next word from the enabled categories and remembers it so it doesn't repeat soon. */
+  const nextWord = () => {
+    const pool = allWords.filter((w) => data.settings.enabledCategories.includes(w.category));
+    const word = pickWord(pool, data.recentIds);
+    if (word) setData((d) => ({ ...d, recentIds: pushRecent(d.recentIds, word.id) }));
+    return word;
+  };
 
   const value: GameContextValue = {
     players: data.players,
@@ -195,8 +214,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     startRound: () => {
       const players = data.players;
       if (players.length < MIN_PLAYERS) return `Add at least ${MIN_PLAYERS} players.`;
-      const pool = allWords.filter((w) => data.settings.enabledCategories.includes(w.category));
-      const word = pickWord(pool, data.recentIds);
+      const word = nextWord();
       if (!word) return 'Pick at least one category that has words.';
       const imposters = assignImposters(players.length, data.settings.imposterCount);
       setRound({
@@ -208,9 +226,30 @@ export function GameProvider({ children }: { children: ReactNode }) {
         hintMode: data.settings.hintMode,
         hint: dealHint(word, data.settings.hintMode, categories.find((c) => c.id === word.category)),
       });
-      setData((d) => ({ ...d, recentIds: pushRecent(d.recentIds, word.id) }));
       return null;
     },
+
+    dealRound: (playerCount) => {
+      if (playerCount < MIN_PLAYERS) return `You need at least ${MIN_PLAYERS} players.`;
+      const word = nextWord();
+      if (!word) return 'Pick at least one category that has words.';
+      const category = categories.find((c) => c.id === word.category);
+      return {
+        word: { am: word.am, en: word.en },
+        category: category ? `${category.emoji} ${category.nameEn}` : '',
+        hint: dealHint(word, data.settings.hintMode, category),
+        imposters: assignImposters(playerCount, data.settings.imposterCount),
+        speakOrder: speakingOrder(playerCount),
+      };
+    },
+
+    scores: data.scores,
+    addScores: (points) => setData((d) => ({ ...d, scores: addPoints(d.scores, points) })),
+    resetScores: () => setData((d) => ({ ...d, scores: {} })),
+
+    lanName: data.lanName,
+    setLanName: (lanName) => setData((d) => ({ ...d, lanName })),
+    deviceId: data.deviceId,
   };
 
   if (!loaded) {

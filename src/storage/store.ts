@@ -8,6 +8,8 @@ export type Settings = {
   timerMinutes: number; // 0 = no discussion timer
   votingSeconds: number; // 0 = no voting timer
   hintMode: HintMode;
+  /** Award points and show the leaderboard. */
+  scoring: boolean;
 };
 
 export type PersistedState = {
@@ -16,6 +18,12 @@ export type PersistedState = {
   customWords: Word[];
   customCategories: Category[];
   recentIds: string[];
+  /** Name this phone uses in LAN games. */
+  lanName: string;
+  /** Random id that lets this phone rejoin a LAN game in its old seat. */
+  deviceId: string;
+  /** One-phone leaderboard: total points per player name. */
+  scores: Record<string, number>;
 };
 
 const KEY = '@imposter/state/v1';
@@ -28,11 +36,17 @@ export const DEFAULT_STATE: PersistedState = {
     timerMinutes: 0,
     votingSeconds: 60,
     hintMode: 'hard',
+    scoring: true,
   },
   customWords: [],
   customCategories: [],
   recentIds: [],
+  lanName: '',
+  deviceId: '',
+  scores: {},
 };
+
+const newDeviceId = () => `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 
@@ -61,19 +75,20 @@ export function readClues(r: Record<string, unknown>): { easy: Clue[]; hard: Clu
 export async function loadState(): Promise<PersistedState> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return DEFAULT_STATE;
+    if (!raw) return { ...DEFAULT_STATE, deviceId: newDeviceId() };
     const saved = JSON.parse(raw) as Partial<PersistedState>;
     return {
       ...DEFAULT_STATE,
       ...saved,
       settings: { ...DEFAULT_STATE.settings, ...saved.settings },
+      deviceId: saved.deviceId || newDeviceId(),
       customWords: (saved.customWords ?? []).map((w) => ({
         ...w,
         ...readClues(w as unknown as Record<string, unknown>),
       })),
     };
   } catch {
-    return DEFAULT_STATE;
+    return { ...DEFAULT_STATE, deviceId: newDeviceId() };
   }
 }
 

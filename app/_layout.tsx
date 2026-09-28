@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GameProvider } from '../src/context/GameContext';
+import { LanProvider } from '../src/context/LanContext';
 import { colors, fonts } from '../src/theme';
 
 // Hold the splash screen until the Ethiopic font is ready, then fade it out.
@@ -30,23 +31,27 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <GameProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.text,
-            headerShadowVisible: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="setup" options={{ title: 'New Game' }} />
-          <Stack.Screen name="reveal" options={noBack} />
-          <Stack.Screen name="discuss" options={noBack} />
-          <Stack.Screen name="result" options={noBack} />
-          <Stack.Screen name="words" options={{ title: 'Manage Words' }} />
-          <Stack.Screen name="how-to-play" options={{ title: 'How to Play' }} />
-        </Stack>
+        <LanProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.bg },
+              headerTintColor: colors.text,
+              headerShadowVisible: false,
+              contentStyle: { backgroundColor: colors.bg },
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="setup" options={{ title: 'New Game' }} />
+            <Stack.Screen name="reveal" options={noBack} />
+            <Stack.Screen name="discuss" options={noBack} />
+            <Stack.Screen name="result" options={noBack} />
+            <Stack.Screen name="words" options={{ title: 'Manage Words' }} />
+            <Stack.Screen name="how-to-play" options={{ title: 'How to Play' }} />
+            <Stack.Screen name="lan/index" options={{ title: 'Play on Wi-Fi' }} />
+            <Stack.Screen name="lan/game" options={noBack} />
+          </Stack>
+        </LanProvider>
       </GameProvider>
     </SafeAreaProvider>
   );

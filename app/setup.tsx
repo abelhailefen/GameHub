@@ -1,78 +1,16 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button, Chip, Screen, SectionTitle, categoryLabel } from '../src/components/ui';
+import { GameOptions } from '../src/components/GameOptions';
+import { Leaderboard } from '../src/components/Leaderboard';
+import { Button, Screen, SectionTitle } from '../src/components/ui';
 import { useGame } from '../src/context/GameContext';
-import { HINT_MODES } from '../src/game/hint';
-import { maxImposters, MIN_PLAYERS } from '../src/game/logic';
+import { MIN_PLAYERS } from '../src/game/logic';
 import { colors, radius, spacing } from '../src/theme';
 
-const TIMER_OPTIONS = [0, 3, 5, 8];
-const VOTE_OPTIONS = [0, 30, 60, 120];
-const voteLabel = (s: number) => (s === 0 ? 'Off' : s < 60 ? `${s}s` : `${s / 60} min`);
-
-/** Quick presets plus a free-text box, so any length can be set. 0 = off. */
-function TimerSetting({
-  presets,
-  value,
-  onChange,
-  format,
-  unit,
-  max,
-}: {
-  presets: number[];
-  value: number;
-  onChange: (v: number) => void;
-  format: (v: number) => string;
-  unit: string;
-  max: number;
-}) {
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
-
-  const commit = () => {
-    const n = Math.max(0, Math.min(max, parseInt(draft.replace(/[^0-9]/g, ''), 10) || 0));
-    setDraft(String(n));
-    onChange(n);
-  };
-
-  return (
-    <>
-      <View style={styles.chips}>
-        {presets.map((p) => (
-          <Chip key={p} label={format(p)} selected={value === p} onPress={() => onChange(p)} />
-        ))}
-      </View>
-      <View style={styles.customRow}>
-        <Text style={styles.customLabel}>Or set your own:</Text>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          onBlur={commit}
-          onSubmitEditing={commit}
-          keyboardType="number-pad"
-          maxLength={4}
-          selectTextOnFocus
-          style={styles.customInput}
-        />
-        <Text style={styles.customLabel}>{unit}</Text>
-        <Button title="Set" variant="secondary" onPress={commit} style={styles.setBtn} />
-      </View>
-    </>
-  );
-}
-
 export default function Setup() {
-  const { players, setPlayers, settings, updateSettings, categories, allWords, startRound } = useGame();
+  const { players, setPlayers, startRound, scores, resetScores, settings } = useGame();
   const [name, setName] = useState('');
-
-  const counts = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const w of allWords) m.set(w.category, (m.get(w.category) ?? 0) + 1);
-    return m;
-  }, [allWords]);
-
-  const maxImp = maxImposters(players.length);
 
   const addPlayer = () => {
     const n = name.trim();
@@ -85,12 +23,11 @@ export default function Setup() {
     setName('');
   };
 
-  const toggleCategory = (id: string) => {
-    const on = settings.enabledCategories.includes(id);
-    updateSettings({
-      enabledCategories: on ? settings.enabledCategories.filter((c) => c !== id) : [...settings.enabledCategories, id],
-    });
-  };
+  const confirmReset = () =>
+    Alert.alert('Reset the leaderboard?', "Everyone's points go back to 0.", [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: resetScores },
+    ]);
 
   const start = () => {
     const error = startRound();
@@ -130,72 +67,13 @@ export default function Setup() {
             <Text style={styles.hint}>Add at least {MIN_PLAYERS} players.</Text>
           ) : null}
 
-          <SectionTitle>Imposters</SectionTitle>
-          <View style={styles.chips}>
-            {[1, 2].map((n) => (
-              <Chip
-                key={n}
-                label={`${n} imposter${n > 1 ? 's' : ''}`}
-                selected={Math.min(settings.imposterCount, maxImp) === n}
-                disabled={n > maxImp}
-                onPress={() => updateSettings({ imposterCount: n })}
-              />
-            ))}
-          </View>
-          {maxImp < 2 ? <Text style={styles.hint}>2 imposters needs 6+ players.</Text> : null}
+          {settings.scoring && players.some((p) => scores[p]) ? (
+            <View style={{ marginTop: spacing.lg }}>
+              <Leaderboard rows={players.map((p) => ({ key: p, name: p, score: scores[p] ?? 0 }))} onReset={confirmReset} />
+            </View>
+          ) : null}
 
-          <SectionTitle>Categories</SectionTitle>
-          <View style={styles.chips}>
-            {categories.map((c) => (
-              <Chip
-                key={c.id}
-                label={`${categoryLabel(c)} (${counts.get(c.id) ?? 0})`}
-                selected={settings.enabledCategories.includes(c.id)}
-                onPress={() => toggleCategory(c.id)}
-              />
-            ))}
-          </View>
-
-          <SectionTitle>Imposter hint</SectionTitle>
-          <View style={styles.chips}>
-            {HINT_MODES.map((m) => (
-              <Chip
-                key={m.id}
-                label={`${m.label} · ${m.sub}`}
-                selected={settings.hintMode === m.id}
-                onPress={() => updateSettings({ hintMode: m.id })}
-              />
-            ))}
-          </View>
-          <Text style={styles.hint}>
-            {settings.hintMode === 'easy'
-              ? 'Easy: a closely related word, e.g. ማር → ንብ (Bee). Picked at random from 4.'
-              : settings.hintMode === 'hard'
-                ? 'Hard: a vague clue that fits many words, e.g. ማር → መድኃኒት (Medicine). Picked at random from 4.'
-                : 'Brutal: the imposter only sees the category.'}
-          </Text>
-
-          <SectionTitle>Discussion timer</SectionTitle>
-          <TimerSetting
-            presets={TIMER_OPTIONS}
-            value={settings.timerMinutes}
-            onChange={(timerMinutes) => updateSettings({ timerMinutes })}
-            format={(m) => (m === 0 ? 'Off' : `${m} min`)}
-            unit="minutes"
-            max={180}
-          />
-          <Text style={styles.hint}>Starts when you press "Discuss", after everyone has given their clue.</Text>
-
-          <SectionTitle>Voting timer</SectionTitle>
-          <TimerSetting
-            presets={VOTE_OPTIONS}
-            value={settings.votingSeconds}
-            onChange={(votingSeconds) => updateSettings({ votingSeconds })}
-            format={voteLabel}
-            unit="seconds"
-            max={3600}
-          />
-          <Text style={styles.hint}>Counts down while you vote. It never reveals the imposter by itself.</Text>
+          <GameOptions playerCount={players.length} />
         </ScrollView>
 
         <View style={styles.footer}>
@@ -232,21 +110,5 @@ const styles = StyleSheet.create({
   playerName: { color: colors.text, fontSize: 17, flex: 1 },
   remove: { color: colors.red, fontSize: 18, fontWeight: '700' },
   hint: { color: colors.muted, marginTop: spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  customRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
-  customLabel: { color: colors.muted, fontSize: 14 },
-  customInput: {
-    backgroundColor: colors.card,
-    color: colors.text,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    fontSize: 17,
-    minWidth: 64,
-    textAlign: 'center',
-  },
-  setBtn: { paddingVertical: 10, paddingHorizontal: spacing.md },
   footer: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
 });

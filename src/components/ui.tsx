@@ -74,10 +74,10 @@ export function WordCard({ am, en, label, accent = colors.yellow }: { am: string
   );
 }
 
-export function EndGameButton({ onPress }: { onPress: () => void }) {
+export function EndGameButton({ onPress, label = 'End game' }: { onPress: () => void; label?: string }) {
   return (
     <Pressable onPress={onPress} hitSlop={12} style={({ pressed }) => [styles.endGame, pressed && { opacity: 0.6 }]}>
-      <Text style={styles.endGameText}>✕ End game</Text>
+      <Text style={styles.endGameText}>✕ {label}</Text>
     </Pressable>
   );
 }

@@ -23,7 +23,8 @@ export default function Home() {
         </View>
 
         <View style={styles.buttons}>
-          <Button title="Play" onPress={() => router.push('/setup')} />
+          <Button title="Play (one phone)" onPress={() => router.push('/setup')} />
+          <Button title="Play on Wi-Fi (each on own phone)" variant="secondary" onPress={() => router.push('/lan')} />
           <Button title="Manage Words" variant="secondary" onPress={() => router.push('/words')} />
           <Button title="How to Play" variant="ghost" onPress={() => router.push('/how-to-play')} />
         </View>
