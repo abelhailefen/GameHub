@@ -2,16 +2,21 @@
 // That needs nothing beyond plain TCP, so it also works on phone hotspots where broadcast and
 // mDNS discovery are often blocked.
 
-import { onMessages, send, type NetApi } from '@gamehub/lan';
-import { LAN_PORT, PROTOCOL_VERSION, type ClientMsg, type GameInfo, type HostMsg } from './protocol';
+import { onMessages, send, type NetApi } from './net';
+import type { ClientMsg, GameInfo, HostMsg, LanConfig } from './protocol';
 
 export type FoundGame = GameInfo & { host: string };
 
 const PROBE_TIMEOUT_MS = 1500;
 const PARALLEL = 48;
 
-/** Asks one address whether it is hosting a game. Resolves null if not. */
-export function probe(net: NetApi, host: string, port = LAN_PORT, timeoutMs = PROBE_TIMEOUT_MS): Promise<FoundGame | null> {
+/** Asks one address whether it is hosting this game. Resolves null if not. */
+export function probe(
+  net: NetApi,
+  host: string,
+  config: Pick<LanConfig, 'port' | 'version'>,
+  timeoutMs = PROBE_TIMEOUT_MS,
+): Promise<FoundGame | null> {
   return new Promise((resolve) => {
     let done = false;
     const finish = (result: FoundGame | null) => {
@@ -21,15 +26,15 @@ export function probe(net: NetApi, host: string, port = LAN_PORT, timeoutMs = PR
       conn.destroy();
       resolve(result);
     };
-    const conn = net.createConnection({ host, port, connectTimeout: timeoutMs }, () =>
-      send(conn, { t: 'hello' } satisfies ClientMsg),
+    const conn = net.createConnection({ host, port: config.port, connectTimeout: timeoutMs }, () =>
+      send(conn, { t: 'hello' } satisfies ClientMsg<never>),
     );
     const timer = setTimeout(() => finish(null), timeoutMs + 500);
     conn.on('error', () => finish(null));
     conn.on('close', () => finish(null));
-    onMessages<HostMsg>(conn, (msg) => {
+    onMessages<HostMsg<unknown>>(conn, (msg) => {
       if (msg.t === 'info') {
-        finish({ host, name: msg.name, players: msg.players, phase: msg.phase, v: msg.v ?? PROTOCOL_VERSION });
+        finish({ host, name: msg.name, players: msg.players, phase: msg.phase, v: msg.v ?? config.version });
       }
     });
   });
@@ -58,15 +63,15 @@ export function subnetHosts(ownIp: string, prefix = 24): string[] {
 export async function scanHosts(
   net: NetApi,
   hosts: string[],
+  config: Pick<LanConfig, 'port' | 'version'>,
   onFound: (game: FoundGame) => void,
   isCancelled: () => boolean,
-  port = LAN_PORT,
 ): Promise<void> {
   const queue = [...hosts];
   const worker = async () => {
     while (queue.length > 0 && !isCancelled()) {
       const host = queue.shift()!;
-      const game = await probe(net, host, port);
+      const game = await probe(net, host, config);
       if (game && !isCancelled()) onFound(game);
     }
   };

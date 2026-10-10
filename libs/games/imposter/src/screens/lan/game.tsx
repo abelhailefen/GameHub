@@ -1,53 +1,33 @@
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { GameOptions } from '../../components/GameOptions';
-import { Am, Button, colors, EndGameButton, Leaderboard, radius, Screen, SectionTitle, SlideToReveal, spacing, WordCard } from '@gamehub/ui';
+import {
+  Am,
+  Button,
+  colors,
+  EndGameButton,
+  Leaderboard,
+  radius,
+  Screen,
+  SectionTitle,
+  SlideToReveal,
+  spacing,
+  useRemoteCountdown,
+  WordCard,
+} from '@gamehub/ui';
 import { useLan } from '../../context/LanContext';
 import { useGameBackButton } from '../../game/exit';
 import { HINT_MODES } from '../../game/hint';
 import { MIN_PLAYERS } from '../../game/logic';
-import type { Card, View as GameView } from '../../lan/protocol';
+import type { Card } from '../../lan/protocol';
 
 const fmt = (ms: number) => {
   const s = Math.ceil(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
-
-/** Counts down locally from the time left the host last reported. Buzzes once at zero. */
-function useTimer(view: GameView | null) {
-  const endsAt = useRef<number | null>(null);
-  const [left, setLeft] = useState<number | null>(null);
-  const buzzed = useRef(false);
-
-  useEffect(() => {
-    if (view?.timerMs === undefined) {
-      endsAt.current = null;
-      setLeft(null);
-      return;
-    }
-    endsAt.current = Date.now() + view.timerMs;
-    buzzed.current = view.timerMs <= 0;
-    setLeft(view.timerMs);
-  }, [view]);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (endsAt.current === null) return;
-      const ms = Math.max(0, endsAt.current - Date.now());
-      setLeft(ms);
-      if (ms === 0 && !buzzed.current) {
-        buzzed.current = true;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      }
-    }, 250);
-    return () => clearInterval(id);
-  }, []);
-
-  return left;
-}
 
 function Timer({ left }: { left: number | null }) {
   if (left === null) return null;
@@ -126,7 +106,7 @@ function Waiting({ text }: { text: string }) {
 export default function LanGame() {
   useKeepAwake();
   const { role, view, status, address, error, clearError, ended, clearEnded, act, leave } = useLan();
-  const left = useTimer(view);
+  const left = useRemoteCountdown(view?.timerMs, view);
   const [seenLocal, setSeenLocal] = useState(false);
   const [guessDraft, setGuessDraft] = useState('');
   const isHost = role === 'host';

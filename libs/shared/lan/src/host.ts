@@ -1,11 +1,10 @@
-// Runs the LAN game on the host phone: a TCP server that relays players' actions to the Engine
-// and sends every phone its own View after each change.
+// Runs a Wi-Fi game on the host phone: a TCP server that relays players' actions to the game's
+// engine and sends every phone its own View after each change.
 
-import type { Engine } from './engine';
-import { errorMessage, onMessages, send, type Conn, type NetApi, type ServerLike } from '@gamehub/lan';
-import { LAN_PORT, PROTOCOL_VERSION, type Action, type ClientMsg, type HostMsg, type View } from './protocol';
+import { errorMessage, onMessages, send, type Conn, type NetApi, type ServerLike } from './net';
+import type { ClientMsg, HostMsg, LanConfig, LanEngine } from './protocol';
 
-export class HostSession {
+export class HostSession<A, V> {
   private server: ServerLike | null = null;
   /** Open connections and the player each one belongs to (null until it joins). */
   private conns = new Map<Conn, string | null>();
@@ -13,11 +12,11 @@ export class HostSession {
 
   constructor(
     private net: NetApi,
-    readonly engine: Engine,
+    private config: LanConfig,
+    readonly engine: LanEngine<A, V>,
     private hostName: string,
     /** Called with the host's own view whenever anything changes. */
-    private onChange: (view: View) => void,
-    private port = LAN_PORT,
+    private onChange: (view: V) => void,
   ) {}
 
   start(): Promise<void> {
@@ -26,7 +25,7 @@ export class HostSession {
       server.on('error', (e) => {
         if (!this.server) reject(new Error(`Couldn't start the game on this phone: ${errorMessage(e)}`));
       });
-      server.listen({ port: this.port, host: '0.0.0.0', reuseAddress: true }, () => {
+      server.listen({ port: this.config.port, host: '0.0.0.0', reuseAddress: true }, () => {
         this.server = server;
         resolve();
         this.broadcast();
@@ -35,7 +34,7 @@ export class HostSession {
   }
 
   /** The host's own actions (the host is a player too). Returns an error message, or null. */
-  act(action: Action): string | null {
+  act(action: A): string | null {
     const error = this.engine.handle(this.engine.hostId, action, Date.now());
     this.broadcast();
     return error;
@@ -50,7 +49,7 @@ export class HostSession {
     if (this.closed) return;
     this.closed = true;
     for (const conn of this.conns.keys()) {
-      send(conn, { t: 'closed' } satisfies HostMsg);
+      send(conn, { t: 'closed' } satisfies HostMsg<V>);
       conn.destroy();
     }
     this.conns.clear();
@@ -74,10 +73,10 @@ export class HostSession {
         this.broadcast();
       }
     });
-    onMessages<ClientMsg>(conn, (msg) => this.receive(conn, msg));
+    onMessages<ClientMsg<A>>(conn, (msg) => this.receive(conn, msg));
   }
 
-  private receive(conn: Conn, msg: ClientMsg) {
+  private receive(conn: Conn, msg: ClientMsg<A>) {
     const id = this.conns.get(conn) ?? null;
     switch (msg.t) {
       case 'hello':
@@ -86,12 +85,12 @@ export class HostSession {
           name: this.hostName,
           players: this.engine.seats.length,
           phase: this.engine.phase,
-          v: PROTOCOL_VERSION,
-        } satisfies HostMsg);
+          v: this.config.version,
+        } satisfies HostMsg<V>);
         return;
 
       case 'join': {
-        if (msg.v !== PROTOCOL_VERSION) {
+        if (msg.v !== this.config.version) {
           this.reject(conn, 'This phone and the host have different versions of the app. Update both to the same version.');
           return;
         }
@@ -119,7 +118,7 @@ export class HostSession {
       case 'act': {
         if (!id || !msg.action) return;
         const error = this.engine.handle(id, msg.action, Date.now());
-        if (error) send(conn, { t: 'error', message: error } satisfies HostMsg);
+        if (error) send(conn, { t: 'error', message: error } satisfies HostMsg<V>);
         this.broadcast();
         return;
       }
@@ -135,7 +134,7 @@ export class HostSession {
   }
 
   private reject(conn: Conn, message: string) {
-    send(conn, { t: 'rejected', message } satisfies HostMsg);
+    send(conn, { t: 'rejected', message } satisfies HostMsg<V>);
     this.conns.delete(conn);
     setTimeout(() => conn.destroy(), 300);
   }
@@ -148,12 +147,12 @@ export class HostSession {
       if (!id) continue;
       if (!seated.has(id)) {
         // The host removed this player.
-        send(conn, { t: 'kicked' } satisfies HostMsg);
+        send(conn, { t: 'kicked' } satisfies HostMsg<V>);
         this.conns.delete(conn);
         setTimeout(() => conn.destroy(), 300);
         continue;
       }
-      send(conn, { t: 'view', view: this.engine.viewFor(id, now) } satisfies HostMsg);
+      send(conn, { t: 'view', view: this.engine.viewFor(id, now) } satisfies HostMsg<V>);
     }
     this.onChange(this.engine.viewFor(this.engine.hostId, now));
   }

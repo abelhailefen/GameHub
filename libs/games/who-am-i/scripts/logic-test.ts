@@ -6,6 +6,7 @@ import {
   derangement,
   endRound,
   guessed,
+  guessMatches,
   newRound,
   passTurn,
   placings,
@@ -91,6 +92,10 @@ check(two.over && placings(two)[0].place === 1 && placings(two)[1].place === nul
 // Ending early: nobody placed, nobody scores.
 const early = endRound(dealWords(writeWord(writeWord(writeWord(newRound(['A', 'B', 'C'], 'food'), 0, 'x'), 1, 'y'), 2, 'z')));
 check(early.over && placings(early).every((x) => x.place === null && x.points === 0), 'ending early gives no points');
+
+// Typed guesses: forgiving about case, spaces, punctuation and a leading "the"; strict otherwise.
+check(guessMatches('  the TEDDY afro! ', 'Teddy Afro') && guessMatches('ዶሮ ወጥ።', 'ዶሮ ወጥ'), 'guess matches despite case, spacing and punctuation');
+check(!guessMatches('Teddy', 'Teddy Afro') && !guessMatches('', '') && !guessMatches('?!', 'x'), 'partial or empty guesses do not match');
 
 console.log(fails ? `${fails} FAILED` : 'ALL PASSED');
 process.exit(fails ? 1 : 0);

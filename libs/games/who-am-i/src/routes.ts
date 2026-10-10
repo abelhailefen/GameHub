@@ -8,4 +8,6 @@ export const routes = {
   play: `${base}/play`,
   result: `${base}/result`,
   howToPlay: `${base}/how-to-play`,
+  lan: `${base}/lan`,
+  lanGame: `${base}/lan/game`,
 } as const;

@@ -1,19 +1,17 @@
-// Messages between the host phone and the other phones in a LAN game.
-// One JSON object per line over TCP. The host is the only source of truth: players send
-// actions, the host answers with a personal View (each phone only ever receives its own card).
+// What the Imposter game sends over Wi-Fi. The transport and session messages are shared
+// (@gamehub/lan); this file has the game's own actions and the View each phone gets (each phone
+// only ever receives its own card).
 
+import type { LanConfig, LanPlayer } from '@gamehub/lan';
 import type { Hint, HintMode } from '../game/hint';
 import type { Outcome } from '../game/scoring';
 
-export const LAN_PORT = 47800;
-/** UDP port hosts broadcast their "I'm hosting" announcement on. */
-export const BEACON_PORT = 47801;
-export const PROTOCOL_VERSION = 2;
+export type { LanPlayer };
+
+export const IMPOSTER_LAN: LanConfig = { game: 'imposter', port: 47800, beaconPort: 47801, version: 2 };
 
 /** 'guess': the imposter was voted out and gets one guess at the word before anything is revealed. */
 export type Phase = 'lobby' | 'reveal' | 'clues' | 'discuss' | 'vote' | 'guess' | 'result';
-
-export type LanPlayer = { id: string; name: string; connected: boolean; isHost: boolean };
 
 export type LanSettings = {
   imposterCount: number;
@@ -92,21 +90,3 @@ export type Action =
   | { t: 'lobby' }
   | { t: 'kick'; id: string }
   | { t: 'resetScores' };
-
-export type ClientMsg =
-  | { t: 'hello' }
-  | { t: 'join'; id: string; name: string; v: number }
-  | { t: 'act'; action: Action }
-  | { t: 'leave' };
-
-export type Beacon = { t: 'imposter'; v: number; port: number };
-
-export type GameInfo = { name: string; players: number; phase: Phase; v: number };
-
-export type HostMsg =
-  | ({ t: 'info' } & GameInfo)
-  | { t: 'view'; view: View }
-  | { t: 'error'; message: string }
-  | { t: 'rejected'; message: string }
-  | { t: 'kicked' }
-  | { t: 'closed' };

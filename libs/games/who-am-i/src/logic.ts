@@ -73,6 +73,20 @@ export function newRound(players: readonly string[], theme: string, rng: Rng = M
 
 export const cleanWord = (word: string) => word.trim().replace(/\s+/g, ' ').slice(0, MAX_WORD_LENGTH);
 
+const squash = (s: string) =>
+  s
+    .normalize('NFC')
+    .toLowerCase()
+    .trim()
+    .replace(/^(the|a|an)\s+/, '')
+    .replace(/[\s.,!?'"’`\-_/()።፣፤፥፦]/g, '');
+
+/** True when a typed guess is clearly the word. Close calls are left to the players. */
+export function guessMatches(guess: string, word: string): boolean {
+  const g = squash(guess);
+  return !!g && g === squash(word);
+}
+
 export function writeWord(round: Round, player: number, word: string): Round {
   return { ...round, words: round.words.map((w, i) => (i === player ? cleanWord(word) : w)) };
 }

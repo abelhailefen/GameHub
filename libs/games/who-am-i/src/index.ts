@@ -8,3 +8,5 @@ export { default as WhoAmIWriteScreen } from './screens/write';
 export { default as WhoAmIPlayScreen } from './screens/play';
 export { default as WhoAmIResultScreen } from './screens/result';
 export { default as WhoAmIHowToPlayScreen } from './screens/how-to-play';
+export { default as WhoAmILanHomeScreen } from './screens/lan/index';
+export { default as WhoAmILanGameScreen } from './screens/lan/game';

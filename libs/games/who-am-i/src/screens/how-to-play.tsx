@@ -12,6 +12,13 @@ const STEPS = [
   'The first to guess their word wins. Keep going to find out who comes second and third, or end the round at any time.',
 ];
 
+const WIFI = [
+  `Everyone opens Who Am I? → "Play on Wi-Fi" on their own phone, on the same Wi-Fi or one phone's hotspot. One player hosts, the others join.`,
+  "Each phone shows who you're writing a word for. Type it in secret; you can change it until everyone is done.",
+  "Your phone shows everyone's words except your own, so no forehead needed. The player whose turn it is asks the questions.",
+  'Type a guess on your phone (an exact match counts by itself), or say it out loud and let the others tap "Got it!".',
+];
+
 const SCORING = [
   `First to guess: +${PLACE_POINTS[0]}`,
   `Second: +${PLACE_POINTS[1]}`,
@@ -27,6 +34,13 @@ export default function HowToPlay() {
           <Text key={i} style={styles.step}>
             <Text style={styles.num}>{i + 1}. </Text>
             {s}
+          </Text>
+        ))}
+
+        <SectionTitle>Playing on Wi-Fi</SectionTitle>
+        {WIFI.map((s, i) => (
+          <Text key={i} style={styles.step}>
+            • {s}
           </Text>
         ))}
 

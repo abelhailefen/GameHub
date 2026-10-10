@@ -5,3 +5,4 @@ export * from './timers';
 export * from './Leaderboard';
 export * from './PlayerList';
 export * from './SlideToReveal';
+export * from './LanFinder';

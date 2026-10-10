@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
@@ -39,6 +40,44 @@ export function useCountdown(active: boolean, total: number, onDone: () => void)
     }, 1000);
     return () => clearInterval(id);
   }, [active, total]);
+
+  return left;
+}
+
+/**
+ * Wi-Fi games: counts down locally from the time left the host last reported, so every phone shows
+ * the same clock. Pass the view the time came with as `received`; a new view restarts the count.
+ * Buzzes once at zero. Returns milliseconds left, or null when there's no timer.
+ */
+export function useRemoteCountdown(timerMs: number | undefined, received: unknown) {
+  const endsAt = useRef<number | null>(null);
+  const [left, setLeft] = useState<number | null>(null);
+  const buzzed = useRef(false);
+
+  useEffect(() => {
+    if (timerMs === undefined) {
+      endsAt.current = null;
+      setLeft(null);
+      return;
+    }
+    endsAt.current = Date.now() + timerMs;
+    buzzed.current = timerMs <= 0;
+    setLeft(timerMs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [received]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (endsAt.current === null) return;
+      const ms = Math.max(0, endsAt.current - Date.now());
+      setLeft(ms);
+      if (ms === 0 && !buzzed.current) {
+        buzzed.current = true;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, []);
 
   return left;
 }

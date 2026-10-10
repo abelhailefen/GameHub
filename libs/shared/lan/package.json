@@ -2,15 +2,18 @@
   "name": "@gamehub/lan",
   "version": "0.0.0",
   "private": true,
-  "description": "Wi-Fi play: a small Android TCP/UDP Expo module plus the line-delimited JSON transport games use on top of it.",
+  "description": "Wi-Fi play: a small Android TCP/UDP Expo module, the line-delimited JSON transport, and the host/client sessions and discovery games build on.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./native": "./src/native.ts"
+    "./native": "./src/native.ts",
+    "./session": "./src/session.ts"
   },
   "peerDependencies": {
-    "expo-modules-core": "*"
+    "expo-modules-core": "*",
+    "expo-network": "*",
+    "react": "*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

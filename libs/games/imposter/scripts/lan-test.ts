@@ -1,14 +1,12 @@
 // End-to-end test of the LAN game over real TCP sockets on this computer: npx nx test imposter
 import * as net from 'node:net';
-import { ClientSession } from '../src/lan/client';
-import { probe } from '../src/lan/discovery';
+import { ClientSession, HostSession, probe, type NetApi } from '@gamehub/lan';
 import { Engine, type Dealt } from '../src/lan/engine';
-import { HostSession } from '../src/lan/host';
-import type { NetApi } from '@gamehub/lan';
-import type { View } from '../src/lan/protocol';
+import { IMPOSTER_LAN, type Action, type View } from '../src/lan/protocol';
 
 const api = net as unknown as NetApi;
 const PORT = 47901;
+const config = { ...IMPOSTER_LAN, port: PORT };
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let fails = 0;
 const check = (ok: boolean, what: string) => {
@@ -28,23 +26,23 @@ const settings = () => ({ imposterCount: 1, hintMode: 'easy' as const, timerMinu
 
 (async () => {
   let hostView: View | null = null;
-  const host = new HostSession(api, new Engine('H', 'Abel', deal, settings), 'Abel', (v) => (hostView = v), PORT);
+  const host = new HostSession<Action, View>(api, config, new Engine('H', 'Abel', deal, settings), 'Abel', (v) => (hostView = v));
   await host.start();
   const hv = () => hostView!;
 
-  const info = await probe(api, '127.0.0.1', PORT);
+  const info = await probe(api, '127.0.0.1', config);
   check(info?.name === 'Abel' && info.players === 1, 'discovery probe finds host');
-  check((await probe(api, '127.0.0.1', PORT + 1, 500)) === null, 'probe on empty port returns null');
+  check((await probe(api, '127.0.0.1', { ...config, port: PORT + 1 }, 500)) === null, 'probe on empty port returns null');
 
   const views: Record<string, View> = {};
   const ends: Record<string, string> = {};
   const join = (id: string, name: string) => {
-    const c = new ClientSession(api, '127.0.0.1', id, name, {
+    const c = new ClientSession<Action, View>(api, config, '127.0.0.1', id, name, {
       onView: (v) => (views[id] = v),
       onStatus: () => {},
       onError: () => {},
       onEnd: (m) => (ends[id] = m),
-    }, PORT);
+    });
     c.connect();
     return c;
   };

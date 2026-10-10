@@ -22,6 +22,10 @@ type WhoAmIValue = {
   /** Ends the round: works out the points and adds them to the leaderboard. */
   finishRound: (round: Round) => void;
   result: RoundResult | null;
+  /** Identifies this phone in Wi-Fi games. */
+  deviceId: string;
+  lanName: string;
+  setLanName: (name: string) => void;
 };
 
 const WhoAmIContext = createContext<WhoAmIValue | null>(null);
@@ -68,6 +72,9 @@ export function WhoAmIProvider({ children }: { children: ReactNode }) {
     },
 
     result,
+    deviceId: data.deviceId,
+    lanName: data.lanName,
+    setLanName: (lanName) => setData((d) => ({ ...d, lanName })),
   };
 
   if (!loaded) {

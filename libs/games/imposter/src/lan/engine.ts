@@ -3,6 +3,7 @@
 import type { Hint } from '../game/hint';
 import { MIN_PLAYERS } from '../game/logic';
 import { addPoints } from '@gamehub/core';
+import type { LanEngine } from '@gamehub/lan';
 import { guessMatches, roundPoints, type Outcome } from '../game/scoring';
 import type { Action, Card, LanPlayer, LanSettings, Phase, RoundResult, View } from './protocol';
 
@@ -23,7 +24,7 @@ export type Deal = (playerCount: number) => Dealt | string;
 
 type Seat = { id: string; name: string; connected: boolean };
 
-export class Engine {
+export class Engine implements LanEngine<Action, View> {
   phase: Phase = 'lobby';
   seats: Seat[];
   round = 0;
