@@ -1,0 +1,41 @@
+{
+  "name": "@gamehub/app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@expo-google-fonts/noto-sans-ethiopic": "^0.4.2",
+    "@gamehub/core": "*",
+    "@gamehub/imposter": "*",
+    "@gamehub/lan": "*",
+    "@gamehub/ui": "*",
+    "@gamehub/who-am-i": "*",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.22",
+    "expo-constants": "~57.0.18",
+    "expo-font": "~57.0.4",
+    "expo-haptics": "~57.0.3",
+    "expo-keep-awake": "~57.0.2",
+    "expo-linking": "~57.0.10",
+    "expo-network": "~57.0.2",
+    "expo-router": "~57.0.21",
+    "expo-splash-screen": "~57.0.9",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "export": "expo export",
+    "typecheck": "tsc --noEmit"
+  },
+  "nx": {
+    "name": "gamehub",
+    "tags": ["type:app"]
+  }
+}

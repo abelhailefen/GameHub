@@ -39,6 +39,12 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+apps/*/ios
+apps/*/android
 
 # native module build output
-modules/*/android/build/
+libs/**/android/build/
+
+# Nx
+.nx/cache
+.nx/workspace-data

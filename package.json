@@ -1,36 +1,26 @@
 {
-  "name": "imposter-game",
+  "name": "@gamehub/source",
   "version": "1.0.0",
-  "main": "expo-router/entry",
-  "dependencies": {
-    "@expo-google-fonts/noto-sans-ethiopic": "^0.4.2",
-    "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~57.0.22",
-    "expo-constants": "~57.0.18",
-    "expo-font": "~57.0.4",
-    "expo-haptics": "~57.0.3",
-    "expo-keep-awake": "~57.0.2",
-    "expo-linking": "~57.0.10",
-    "expo-network": "~57.0.2",
-    "expo-router": "~57.0.21",
-    "expo-splash-screen": "~57.0.9",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.26.0"
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/shared/*",
+    "libs/games/*"
+  ],
+  "scripts": {
+    "start": "nx run gamehub:start",
+    "android": "nx run gamehub:android",
+    "ios": "nx run gamehub:ios",
+    "web": "nx run gamehub:web",
+    "typecheck": "nx run-many -t typecheck",
+    "test": "nx run-many -t test",
+    "graph": "nx graph"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "@types/react": "~19.2.2",
+    "nx": "23.3.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3"
-  },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "typecheck": "tsc --noEmit",
-    "test:lan": "npx tsx scripts/lan-test.ts"
-  },
-  "private": true
+  }
 }

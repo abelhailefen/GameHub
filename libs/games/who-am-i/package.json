@@ -1,0 +1,33 @@
+{
+  "name": "@gamehub/who-am-i",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Who Am I?: everyone writes a word for someone else, then takes turns holding the phone to their forehead and asking yes/no questions until they guess it.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@gamehub/core": "*",
+    "@gamehub/ui": "*"
+  },
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "expo-haptics": "*",
+    "expo-keep-awake": "*",
+    "expo-router": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx scripts/logic-test.ts"
+  },
+  "nx": {
+    "name": "who-am-i",
+    "tags": [
+      "type:game"
+    ]
+  }
+}
